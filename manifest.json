@@ -1,0 +1,26 @@
+{
+    "name": "No Recommendations",
+    "description": "Removes recommended videos from YouTube.",
+    "version": "1.0.1",
+    "manifest_version": 3,
+    "action": {},
+    "declarative_net_request": {
+      "rule_resources": [{
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }]
+    },
+    "permissions": [ 
+      "declarativeNetRequest",
+      "scripting",
+      "tabs"
+    ],
+    "host_permissions": [
+      "https://www.youtube.com/*",
+      "https://www.youtube.com/shorts/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
