@@ -1,3 +1,9 @@
+const host = "https://www.youtube.com/";
+
+function makePath(path = "") {
+    return `${host}${path}`
+}
+
 function removeHomepage() {
     for (const element of document.getElementsByTagName("ytd-two-column-browse-results-renderer")) {
         element.remove()
@@ -17,22 +23,23 @@ function removeRecommended() {
 chrome.tabs.onUpdated.addListener(async (tabId, info) => {
     const tab = await chrome.tabs.get(tabId)
     
-    if (info.status !== "complete" || !tab.url.startsWith("https://www.youtube.com/")) {
+    if (info.status !== "complete" || !tab.url.startsWith(host)) {
         return
     }
 
     let func
 
-    if (tab.url === "https://www.youtube.com/") {
+    if (tab.url === host) {
         func = removeHomepage
-    } else if (tab.url.startsWith("https://www.youtube.com/watch")) {
+    } else if (tab.url.startsWith(makePath("watch/"))) {
         func = removeRecommended
-    } else if (tab.url.startsWith("https://www.youtube.com/shorts/")) {
-        chrome.tabs.update(tab.id, {url: `https://www.youtube.com/watch?v=${tab.url.split("/").pop()}`})
+    } else if (tab.url.startsWith(makePath("shorts/"))) {
+        chrome.tabs.update(tab.id, {url: makePath(`watch?v=${tab.url.split("/").pop()}`)})
         func = removeRecommended
     } else {
         return
     }
+    
     chrome.scripting.executeScript(
         {
             target: {tabId: tab.id},
