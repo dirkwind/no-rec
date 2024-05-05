@@ -1,48 +1,84 @@
-const host = "https://www.youtube.com/";
+const host = "https://www.youtube.com";
 
-function makePath(path = "") {
-  return `${host}${path}`;
-}
-
-function removeHomepage() {
-  for (const element of document.getElementsByTagName(
-    "ytd-two-column-browse-results-renderer"
-  )) {
-    element.remove();
+function injection(host) {
+  function log(...args) {
+    console.log("no-rec:", ...args);
   }
-}
 
-function removeRecommended() {
-  // wrap the function to call repeatedly if needed.
-  const inner = () => {
-    const related = document.getElementById("related");
+  function makePath(path = "") {
+    return `${host}/${path}`;
+  }
 
-    if (related == null) {
-      // if we didn't find the "related" item, try again after 1 second
-      setTimeout(inner, 1000);
-      return;
+  function repeatUntilTrue(func, interval = 100) {
+    const inner = () => {
+      if (!func()) setTimeout(inner, interval);
+    };
+    inner();
+  }
+
+  function hidePrimary() {
+    log("Hiding primary element");
+    const primary = document.getElementById("primary");
+    if (primary != null) {
+      primary.hidden = true;
+      return true;
     }
-    related.remove();
+    return false;
+  }
 
-    // do one more check to make sure "related" was removed
-    // sometimes, "related" can be added again after being deleted
-    setTimeout(() => {
-      const related = document.getElementById("related");
-      if (related != null) {
-        inner();
-      }
-    }, 2000);
+  function showPrimary() {
+    log("Showing primary element");
+    const primary = document.getElementById("primary");
+    if (primary != null) {
+      primary.hidden = false;
+      return true;
+    }
+    return false;
+  }
 
-    // remove the endscreen after a delay (it doesn't load instantly)
+  function hideRelated() {
+    log("Hiding related element");
+    const related = document.getElementById("related");
+    if (related != null) {
+      related.hidden = true;
+      return true;
+    }
+    return false;
+  }
+
+  function removeEndscreen() {
     setTimeout(() => {
+      log("removing endscreen element");
       document
         .getElementsByClassName(
           "html5-endscreen ytp-player-content videowall-endscreen"
         )[0]
         .remove();
     }, 2000);
-  };
-  inner();
+  }
+
+  function listener() {
+    const url = window.location.href;
+
+    if (url === host || url === makePath("")) {
+      log("Detected homepage");
+      repeatUntilTrue(hidePrimary);
+    } else if (url.startsWith(makePath("shorts"))) {
+      log("Detected shorts page");
+      window.location.href = makePath(`watch?v=${url.split("/").pop()}`);
+      showPrimary();
+      repeatUntilTrue(hideRelated);
+      removeEndscreen();
+    } else if (url.startsWith(makePath("watch"))) {
+      log("Detected watch page");
+      showPrimary();
+      repeatUntilTrue(hideRelated);
+      removeEndscreen();
+    }
+  }
+
+  window.addEventListener("popstate", listener);
+  listener();
 }
 
 chrome.tabs.onUpdated.addListener(async (tabId, info) => {
@@ -52,22 +88,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, info) => {
     return;
   }
 
-  let func = () => {};
-
-  if (tab.url === host) {
-    func = removeHomepage;
-  } else if (tab.url.startsWith(makePath("watch"))) {
-    func = removeRecommended;
-  } else if (tab.url.startsWith(makePath("shorts"))) {
-    chrome.tabs.update(tab.id, {
-      url: makePath(`watch?v=${tab.url.split("/").pop()}`),
-    });
-  } else {
-    return;
-  }
-
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: func,
+    func: injection,
+    args: [host],
   });
 });
