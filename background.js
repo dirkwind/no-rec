@@ -13,16 +13,36 @@ function removeHomepage() {
 }
 
 function removeRecommended() {
-  document.getElementById("related").remove();
+  // wrap the function to call repeatedly if needed.
+  const inner = () => {
+    const related = document.getElementById("related");
 
-  // timeout because apparently the endscreen isn't loaded immediately
-  setTimeout(() => {
-    document
-      .getElementsByClassName(
-        "html5-endscreen ytp-player-content videowall-endscreen"
-      )[0]
-      .remove();
-  }, 2000);
+    if (related == null) {
+      // if we didn't find the "related" item, try again after 1 second
+      setTimeout(inner, 1000);
+      return;
+    }
+    related.remove();
+
+    // do one more check to make sure "related" was removed
+    // sometimes, "related" can be added again after being deleted
+    setTimeout(() => {
+      const related = document.getElementById("related");
+      if (related != null) {
+        inner();
+      }
+    }, 2000);
+
+    // remove the endscreen after a delay (it doesn't load instantly)
+    setTimeout(() => {
+      document
+        .getElementsByClassName(
+          "html5-endscreen ytp-player-content videowall-endscreen"
+        )[0]
+        .remove();
+    }, 2000);
+  };
+  inner();
 }
 
 chrome.tabs.onUpdated.addListener(async (tabId, info) => {
@@ -32,7 +52,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, info) => {
     return;
   }
 
-  let func;
+  let func = () => {};
 
   if (tab.url === host) {
     func = removeHomepage;
@@ -42,7 +62,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, info) => {
     chrome.tabs.update(tab.id, {
       url: makePath(`watch?v=${tab.url.split("/").pop()}`),
     });
-    func = () => setTimeout(removeRecommended, 5000);
   } else {
     return;
   }
