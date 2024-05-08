@@ -1,7 +1,7 @@
 {
   "name": "No Recommendations",
   "description": "Removes recommended videos from YouTube.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "manifest_version": 3,
   "action": {},
   "declarative_net_request": {

@@ -19,7 +19,7 @@ function injection(host) {
   function hidePrimary() {
     log("Hiding primary element");
     const primary = document.getElementById("primary");
-    if (primary != null) {
+    if (primary != null && primary.className !== "") {
       primary.hidden = true;
       return true;
     }
@@ -39,7 +39,7 @@ function injection(host) {
   function hideRelated() {
     log("Hiding related element");
     const related = document.getElementById("related");
-    if (related != null) {
+    if (related != null && related.className !== "") {
       related.hidden = true;
       return true;
     }
